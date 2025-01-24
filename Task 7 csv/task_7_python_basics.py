@@ -86,7 +86,7 @@ class CsvProcessor:
             reader = file_reader.read()
 
         with open(self.output_word_file, 'w', encoding='utf-8') as word_counter:
-            writer = csv.writer(word_counter, delimiter='-')
+            writer = csv.writer(word_counter, delimiter=' ')
             words = list(set(reader.lower().split()))
             for word in words:
                 writer.writerow([f'{word}', f'{reader.lower().count(word)}'])
