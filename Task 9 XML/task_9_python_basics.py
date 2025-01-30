@@ -3,7 +3,9 @@ import sys
 import csv
 import json
 import string
-from datetime import datetime
+import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta
+
 
 
 class News:
@@ -150,7 +152,7 @@ class JsonProcessor:
             print(f"Error: JSON file '{self.json_file}' not found.")
 
 
-json_processor = JsonProcessor(json_file='C:\\Users\\anastasiya_shyshliuk\\PycharmProjects\\python_course\\Task 8 JSON\\file_to_input.json')
+json_processor = JsonProcessor(json_file='C:\\Users\\anastasiya_shyshliuk\\PycharmProjects\\python_course\\Task 9 JSON\\file_to_input.json')
 json_processor.json_schema_validator()
 json_processor.remove_json()
 
@@ -167,5 +169,84 @@ csv_processor = CsvProcessor()
 with open('Processed_News.txt', 'r', encoding='utf-8') as file:
     processed_text = file.read()
 
+csv_processor.word_counter(processed_text)
+csv_processor.detailed_counter(processed_text)
+
+
+class XmlProcessor:
+    def __init__(self, xml_file=r'C:\Users\anastasiya_shyshliuk\PycharmProjects\python_course\Task 9 XML\file_to_input.xml'):
+        self.xml_file = xml_file
+
+    def xml_schema_validator(self):
+        try:
+            tree = ET.parse(self.xml_file)
+            root = tree.getroot()
+            tags = {child.tag for child in root}
+            text_to_process = ""
+
+            if tags == {'type', 'text', 'city', 'date_of_post'}:
+                news = News(root.find('text').text, root.find('city').text, root.find('date_of_post').text)
+                news.publish()
+                text_to_process = root.find('text').text
+            elif tags == {'type', 'text', 'expiration_date'}:
+                expiration_date = (datetime.now() + timedelta(days=int(root.find('days_to_expire').text))).strftime(
+                    '%Y-%m-%d')
+                ad = Advertisement(root.find('text').text, expiration_date)
+                ad.publish()
+                text_to_process = root.find('ad_text').text
+            elif tags == {'type', 'user_name', 'text', 'date_of_post'}:
+                post = MyPost(root.find('user_name').text, root.find('text').text, root.find('date_of_post').text)
+                post.publish()
+                text_to_process = root.find('post_text').text
+            else:
+                print("Error: Incorrect XML structure!")
+                return
+
+            file_processor = FileReader(input_file="News.txt")
+            content = file_processor.read_file_with_items()
+            if content != "Format mismatch!" and not content.startswith("Error"):
+                file_processor.write_file_from_another(content)
+                file_processor.delete_input_file()
+            else:
+                print(content)
+
+
+            csv_processor = CsvProcessor()
+            csv_processor.word_counter(text_to_process)  # Передаем текст
+            csv_processor.detailed_counter(text_to_process)
+
+            print("XML data processed successfully.")
+        except ET.ParseError:
+            print("Error: Failed to parse XML file.")
+        except FileNotFoundError:
+            print(f"Error: File '{self.xml_file}' not found.")
+
+    def remove_xml(self):
+        if os.path.exists(self.xml_file):
+            os.remove(self.xml_file)
+            print(f"XML file '{self.xml_file}' has been deleted.")
+        else:
+            print(f"Error: XML file '{self.xml_file}' not found.")
+
+
+xml_processor = XmlProcessor()
+xml_processor.xml_schema_validator()
+xml_processor.remove_xml()
+
+file_processor = FileReader(input_file="News.txt")
+content = file_processor.read_file_with_items()
+
+if content != "Format mismatch!" and not content.startswith("Error"):
+    file_processor.write_file_from_another(content)
+    file_processor.delete_input_file()
+else:
+    print(content)
+
+
+with open("Processed_News.txt", "r", encoding="utf-8") as file:
+    processed_text = file.read()
+
+
+csv_processor = CsvProcessor()
 csv_processor.word_counter(processed_text)
 csv_processor.detailed_counter(processed_text)
